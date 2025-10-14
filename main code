@@ -544,7 +544,15 @@
         </div>
     </div>
 
+    <!-- EmailJS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script>
+        // Initialize EmailJS with your public key
+        // Sign up at https://www.emailjs.com/ and replace 'YOUR_PUBLIC_KEY' with your actual public key
+        (function() {
+            emailjs.init('YOUR_PUBLIC_KEY'); // Replace with your EmailJS public key
+        })();
+
         function scrollToCategories() {
             document.getElementById('categories').scrollIntoView({ behavior: 'smooth' });
         }
@@ -650,15 +658,59 @@
             }
             
             if (isValid) {
-                // Show success message
-                document.getElementById('successMessage').classList.add('active');
-                document.getElementById('trainerForm').style.display = 'none';
+                const specialization = document.getElementById('specialization').value.trim();
+                const submitBtn = document.querySelector('.submit-btn');
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Sending...';
                 
-                // Reset after 3 seconds
-                setTimeout(() => {
-                    closeTrainerForm();
-                    document.getElementById('trainerForm').style.display = 'block';
-                }, 3000);
+                // Prepare email parameters
+                const templateParams = {
+                    to_email: email,
+                    admin_email: 'ladwarikin@gmail.com',
+                    trainer_name: name,
+                    trainer_email: email,
+                    trainer_phone: phone,
+                    trainer_experience: experience,
+                    trainer_specialization: specialization || 'Not specified',
+                    trainer_location: location,
+                    trainer_bio: bio
+                };
+                
+                // Send email to the applicant
+                emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', {
+                    to_email: email,
+                    to_name: name,
+                    subject: 'Thank you for your trainer application!',
+                    message: `Dear ${name},\n\nThank you for applying to become a trainer at Hoopers Hub. We have received your application and will review it shortly.\n\nYour Application Details:\n- Email: ${email}\n- Phone: ${phone}\n- Experience: ${experience}\n- Specialization: ${specialization || 'Not specified'}\n- Location: ${location}\n\nWe'll get back to you soon!\n\nBest regards,\nHoopers Hub Team`
+                }).then(() => {
+                    console.log('Confirmation email sent to applicant');
+                    
+                    // Send notification email to admin
+                    return emailjs.send('YOUR_SERVICE_ID', 'YOUR_ADMIN_TEMPLATE_ID', {
+                        to_email: 'ladwarikin@gmail.com',
+                        subject: 'New Trainer Application',
+                        message: `New trainer application received:\n\nName: ${name}\nEmail: ${email}\nPhone: ${phone}\nExperience: ${experience}\nSpecialization: ${specialization || 'Not specified'}\nLocation: ${location}\nBio: ${bio}`
+                    });
+                }).then(() => {
+                    console.log('Notification email sent to admin');
+                    
+                    // Show success message
+                    document.getElementById('successMessage').classList.add('active');
+                    document.getElementById('trainerForm').style.display = 'none';
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Submit Application';
+                    
+                    // Reset after 3 seconds
+                    setTimeout(() => {
+                        closeTrainerForm();
+                        document.getElementById('trainerForm').style.display = 'block';
+                    }, 3000);
+                }).catch((error) => {
+                    console.error('Error sending emails:', error);
+                    alert('There was an error submitting your application. Please try again or contact us directly at ladwarikin@gmail.com');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Submit Application';
+                });
             }
             
             return false;
